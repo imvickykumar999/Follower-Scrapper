@@ -12,7 +12,7 @@ from scrapping import convert_to_numeric  # Assuming convert_to_numeric is in sc
 
 def get_influencer_data():
     """Fetch influencer profile links and scrape data for each influencer."""
-    get_url = 'https://www.influencerhiring.com/get_influencer_profile_links/?platform=Facebook'
+    get_url = 'https://scrappedserver.pythonanywhere.com/get_influencer_profile_links/?platform=Facebook'
     
     # Authorization headers
     headers = {
@@ -140,7 +140,7 @@ def convert_to_numeric(value):
 
 def post_influencer_subscriber(influ_data):
     """Posts influencer data to the server."""
-    post_url = 'https://www.influencerhiring.com/post_influencer_profiledata/'
+    post_url = 'https://scrappedserver.pythonanywhere.com/myendpoint'
     
     headers = {
         'authorization': 'cbvcasdghcvsdhcvjhsdgjhasdjhsdadjasjdjkhasjhdgjasd',
