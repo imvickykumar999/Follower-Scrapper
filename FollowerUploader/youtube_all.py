@@ -24,7 +24,7 @@ def convert_to_numeric(subscriber_text):
             return 0
 
 def get_influencer_data():
-    get_url = 'https://www.influencerhiring.com/get_influencer_profile_links/?platform=Youtube'
+    get_url = 'https://scrappedserver.pythonanywhere.com/get_influencer_profile_links/?platform=Youtube'
     
     headers = {
         'authorization': 'cbvcasdghcvsdhcvjhsdgjhasdjhsdadjasjdjkhasjhdgjasd'
@@ -87,7 +87,7 @@ def get_influencer_data():
 
         
 def post_influencer_subscriber(influ_data):
-    post_url = 'https://www.influencerhiring.com/post_influencer_profiledata/'
+    post_url = 'https://scrappedserver.pythonanywhere.com/myendpoint'
 
     headers = {
         'authorization': 'cbvcasdghcvsdhcvjhsdgjhasdjhsdadjasjdjkhasjhdgjasd',
