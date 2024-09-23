@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influencer Data Table with Pagination and Search</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin: 20px auto;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+            text-align: left;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        a {
+            text-decoration: none;
+            color: blue;
+        }
+        .pagination {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .pagination button, .pagination a {
+            padding: 5px 10px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        .pagination a.active {
+            background-color: #0056b3;
+        }
+        .pagination a:hover {
+            background-color: #0056b3;
+        }
+        #searchBar {
+            margin: 20px auto;
+            display: block;
+            width: 80%;
+            padding: 10px;
+            font-size: 16px;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+
+<h2 style="text-align: center;">Influencer Data Table</h2>
+
+<input type="text" id="searchBar" placeholder="Search by User ID, Platform Name, or Credential" onkeyup="searchTable()">
+
+<table id="influencerTable">
+    <thead>
+        <tr>
+            <th>User ID</th>
+            <th>Platform Name</th>
+            <th>Followers</th>
+            <th>Platform Credential</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Rows will be dynamically inserted here -->
+    </tbody>
+</table>
+
+<div class="pagination" id="paginationControls">
+    <!-- Pagination buttons will be dynamically generated here -->
+</div>
+
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+
+    function loadData(page) {
+        if (page < 1 || page > totalPages) return;
+
+        $.ajax({
+            url: '/get_influencer_data',
+            type: 'GET',
+            data: { page: page, per_page: 10 },
+            success: function(response) {
+                // Clear the existing table rows
+                $('#influencerTable tbody').empty();
+
+                // Add new rows
+                response.data.forEach(function(influencer) {
+                    let row = `
+                        <tr>
+                            <td>${influencer.userid}</td>
+                            <td>${influencer.platformname}</td>
+                            <td>${influencer.followers}</td>
+                            <td><a href="https://www.instagram.com/${influencer.platformcredential}/" target="_blank">${influencer.platformcredential}</a></td>
+                        </tr>
+                    `;
+                    $('#influencerTable tbody').append(row);
+                });
+
+                // Update pagination info
+                currentPage = response.current_page;
+                totalPages = response.pages;
+                generatePaginationButtons();
+            },
+            error: function(error) {
+                console.log('Error:', error);
+            }
+        });
+    }
+
+    function generatePaginationButtons() {
+        let paginationControls = $('#paginationControls');
+        paginationControls.empty();
+
+        // Previous button
+        paginationControls.append(`<button onclick="loadData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>`);
+
+        // Page number buttons
+        for (let i = 1; i <= totalPages; i++) {
+            paginationControls.append(`<a href="javascript:void(0)" class="${i === currentPage ? 'active' : ''}" onclick="loadData(${i})">${i}</a>`);
+        }
+
+        // Next button
+        paginationControls.append(`<button onclick="loadData(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>`);
+    }
+
+    // Search filter function
+    function searchTable() {
+        let input = $('#searchBar').val().toLowerCase();
+        $('#influencerTable tbody tr').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(input) > -1);
+        });
+    }
+
+    // Load the first page of data when the page loads
+    $(document).ready(function() {
+        loadData(1);
+    });
+</script>
+
+</body>
+</html>
