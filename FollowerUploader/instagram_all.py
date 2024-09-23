@@ -8,7 +8,7 @@ from scrapping import *  # Assuming scrapping contains utility functions like co
 import requests, os, json, time
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-user_data_dir = os.path.join(script_dir, 'sel_user')  # This will be inside the same folder
+user_data_dir = os.path.join(script_dir, 'insta_sel_user')  # This will be inside the same folder
 
 # Function to log in to Instagram
 def user_login(driver):

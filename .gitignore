@@ -1,4 +1,5 @@
 
-sel_user/
 *.pyc
 *.mp4
+FollowerUploader/insta_sel_user/
+FollowerUploader/twitter_sel_user/

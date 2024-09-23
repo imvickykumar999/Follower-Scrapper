@@ -1,6 +1,4 @@
-import time
-import json
-import requests
+import time, os, json, requests
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -8,6 +6,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from scrapping import convert_to_numeric
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+user_data_dir = os.path.join(script_dir, 'twitter_sel_user')  # This will be inside the same folder
 
 
 def login_user(driver, username, password):
@@ -39,9 +40,8 @@ def fetch_influencer_data():
     """
     Fetches influencer data from the API and processes each influencer profile.
     """
-    api_url = 'https://www.influencerhiring.com/get_influencer_profile_links/?platform=Twitter'
+    api_url = 'https://scrappedserver.pythonanywhere.com/get_influencer_profile_links/?platform=Twitter'
     headers = {'authorization': 'cbvcasdghcvsdhcvjhsdgjhasdjhsdadjasjdjkhasjhdgjasd'}
-    user_data_dir = '~/Documents/sel_user'
 
     try:
         response = requests.get(api_url, headers=headers)
@@ -116,7 +116,7 @@ def post_influencer_subscriber(influ_data):
     """
     Posts the influencer data to the server.
     """
-    post_url = 'https://www.influencerhiring.com/post_influencer_profiledata/'
+    post_url = 'https://scrappedserver.pythonanywhere.com/myendpoint'
     headers = {
         'authorization': 'cbvcasdghcvsdhcvjhsdgjhasdjhsdadjasjdjkhasjhdgjasd',
         'Content-Type': 'application/json'
