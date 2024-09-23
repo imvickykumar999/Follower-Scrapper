@@ -1,7 +1,0 @@
-selenium
-webdriver-manager
-requests
-numerize
-beautifulsoup4
-Flask 
-Flask-SQLAlchemy
