@@ -1,121 +1,140 @@
-# `.onion` **scrapping**
+# `.onion` **Server**
 
-Using Selenium to interact with `.onion` URLs requires configuring it to use the Tor network. `.onion` URLs are part of the **Tor** network (The Onion Router), which provides anonymity for users. To access `.onion` URLs via Selenium, you need to run a **Tor browser** or a **Tor proxy** and configure Selenium's WebDriver to use it.
+To implement CRUD (Create, Read, Update, Delete) operations in Django for an `.onion` URL (i.e., a service hosted on the Tor network), you can follow the same principles as regular Django CRUD operations. The `.onion` domain doesn't require any special changes to your Django app itself. However, you'll need to ensure that your server is properly configured to handle the Tor service. Below is a basic guide to set up Django CRUD operations for a project accessible via a `.onion` URL:
 
-Here’s a step-by-step guide on how to use Selenium with `.onion` URLs:
+### 1. **Configure Django Project**
+Ensure your Django project is properly configured as usual for basic CRUD operations. You can create a model and views to handle these operations.
 
-### Prerequisites:
-1. **Tor Browser**: Download and install the Tor Browser from the official website: [https://www.torproject.org/download/](https://www.torproject.org/download/).
-2. **Selenium**: Install Selenium WebDriver using pip:
+### Example Model (`models.py`)
+```python
+from django.db import models
+
+class OnionService(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+```
+
+### Example Views (`views.py`)
+For CRUD operations, you can use Django’s generic views to simplify the code:
+
+```python
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import OnionService
+from .forms import OnionServiceForm
+
+# Create
+def onion_service_create(request):
+    if request.method == "POST":
+        form = OnionServiceForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('onion_service_list')
+    else:
+        form = OnionServiceForm()
+    return render(request, 'onion_service_form.html', {'form': form})
+
+# Read (List and Detail)
+def onion_service_list(request):
+    services = OnionService.objects.all()
+    return render(request, 'onion_service_list.html', {'services': services})
+
+def onion_service_detail(request, pk):
+    service = get_object_or_404(OnionService, pk=pk)
+    return render(request, 'onion_service_detail.html', {'service': service})
+
+# Update
+def onion_service_update(request, pk):
+    service = get_object_or_404(OnionService, pk=pk)
+    if request.method == "POST":
+        form = OnionServiceForm(request.POST, instance=service)
+        if form.is_valid():
+            form.save()
+            return redirect('onion_service_detail', pk=service.pk)
+    else:
+        form = OnionServiceForm(instance=service)
+    return render(request, 'onion_service_form.html', {'form': form})
+
+# Delete
+def onion_service_delete(request, pk):
+    service = get_object_or_404(OnionService, pk=pk)
+    if request.method == "POST":
+        service.delete()
+        return redirect('onion_service_list')
+    return render(request, 'onion_service_confirm_delete.html', {'service': service})
+```
+
+### Example Form (`forms.py`)
+```python
+from django import forms
+from .models import OnionService
+
+class OnionServiceForm(forms.ModelForm):
+    class Meta:
+        model = OnionService
+        fields = ['title', 'description']
+```
+
+### Example Templates
+You can create HTML templates like `onion_service_form.html`, `onion_service_list.html`, and `onion_service_detail.html` to handle the frontend.
+
+---
+
+### 2. **Configure Tor Hidden Service**
+
+To host your Django application on a `.onion` domain, you need to configure a Tor hidden service on your server.
+
+#### Steps:
+1. **Install Tor** on your server.
    ```bash
-   pip install selenium
+   sudo apt install tor
    ```
-3. **Tor executable**: Ensure that the Tor executable is accessible on your machine.
+   
+2. **Configure the hidden service** by editing the Tor configuration file (`/etc/tor/torrc`).
 
-### Method 1: Using Tor with Firefox and Selenium
+   Add the following lines to configure the hidden service:
+   ```bash
+   HiddenServiceDir /var/lib/tor/hidden_service/
+   HiddenServicePort 80 127.0.0.1:8000  # This assumes your Django app runs on port 8000
+   ```
 
-#### Step-by-Step Configuration:
+3. **Restart Tor** to apply the changes:
+   ```bash
+   sudo service tor restart
+   ```
 
-1. **Install GeckoDriver**:
-   For Selenium to work with Firefox, you need GeckoDriver. You can install it via:
-   - Download the appropriate version from [here](https://github.com/mozilla/geckodriver/releases).
-   - Alternatively, install it via the **webdriver_manager** library:
-     ```bash
-     pip install webdriver-manager
-     ```
+4. **Get your .onion URL**. The hidden service's hostname (your `.onion` URL) will be generated and stored in the file:
+   ```bash
+   cat /var/lib/tor/hidden_service/hostname
+   ```
 
-2. **Run Tor in the Background**:
-   Tor needs to be running in the background to route traffic through the network. If you installed the Tor Browser, it usually runs Tor automatically when you start the browser. You can also run Tor separately using the Tor executable.
+   Use this URL to access your Django app via Tor.
 
-3. **Configure Firefox to Use the Tor Network**:
-   You will configure Firefox's proxy settings to connect to the Tor network (default SOCKS5 proxy on `127.0.0.1:9150` for the Tor Browser).
+---
 
-Here’s a Python script to set up Selenium with Tor:
+### 3. **Adjust Security Settings**
 
-```python
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-from webdriver_manager.firefox import GeckoDriverManager
+To ensure your app can be accessed via `.onion` safely, you should make a few security-related adjustments in `settings.py`.
 
-def configure_tor_with_selenium():
-    # Set up Firefox options
-    options = Options()
-    
-    # Make sure Tor is running locally (default SOCKS proxy address for Tor Browser)
-    options.set_preference("network.proxy.type", 1)  # Set proxy type to manual
-    options.set_preference("network.proxy.socks", "127.0.0.1")  # Tor's local SOCKS5 proxy address
-    options.set_preference("network.proxy.socks_port", 9150)  # Tor Browser proxy port
-    options.set_preference("network.proxy.socks_remote_dns", True)  # Route DNS through Tor
-    options.set_preference("places.history.enabled", False)  # Disable browser history
-    options.set_preference("privacy.clearOnShutdown.offlineApps", True)
-    options.set_preference("privacy.clearOnShutdown.passwords", True)
-    options.set_preference("privacy.clearOnShutdown.siteSettings", True)
-    options.set_preference("privacy.sanitize.sanitizeOnShutdown", True)
+#### Example Settings:
+- Allow the `.onion` domain in `ALLOWED_HOSTS`:
+  ```python
+  ALLOWED_HOSTS = ['your-onion-url.onion', '127.0.0.1']
+  ```
 
-    # Initialize the WebDriver with the options
-    driver = webdriver.Firefox(executable_path=GeckoDriverManager().install(), options=options)
-    
-    return driver
+- **Force HTTPS** (if necessary, depending on your setup with Tor):
+  ```python
+  SECURE_SSL_REDIRECT = True
+  ```
 
-if __name__ == "__main__":
-    driver = configure_tor_with_selenium()
-    
-    # Visit an .onion URL (make sure the URL is correct)
-    onion_url = "http://exampleonionurl.onion"
-    driver.get(onion_url)
-    
-    # You can interact with the page as usual using Selenium commands
-    print(driver.title)  # Print the title of the page to verify it's loaded
-    
-    driver.quit()
-```
+- Make sure your server has the necessary security headers to protect against common web attacks.
 
-### Key Points:
-- **SOCKS Proxy**: The Tor network uses a SOCKS5 proxy by default, which is configured in the script (`127.0.0.1:9150` for the Tor Browser).
-- **FireFox Options**: Several privacy-related options are set to ensure no data is saved locally.
-  
-### Method 2: Using Tor and Chrome (with the Tor Expert Bundle)
+---
 
-1. **Download the Tor Expert Bundle**:
-   - You can download the [Tor Expert Bundle](https://www.torproject.org/download/tor/) for your operating system, which allows you to run Tor independently of the Tor Browser.
+### 4. **Accessing via the .onion Domain**
+Once you’ve completed the above steps, your Django application should be accessible via the `.onion` URL. The CRUD operations will work just like in any normal Django app.
 
-2. **Configure Chrome to Use the Tor Network**:
-   You can set up Chrome to use the Tor SOCKS5 proxy, similar to the Firefox configuration above, but Chrome does not natively support SOCKS5 DNS resolution, so you will also need to configure DNS resolution to route through Tor.
-
-```python
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-
-def configure_tor_with_chrome():
-    # Set up Chrome options
-    options = webdriver.ChromeOptions()
-    
-    # Set up the Tor SOCKS5 proxy
-    options.add_argument("--proxy-server=socks5://127.0.0.1:9150")
-    
-    # Initialize Chrome WebDriver with the options
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    
-    return driver
-
-if __name__ == "__main__":
-    driver = configure_tor_with_chrome()
-    
-    # Visit an .onion URL (make sure the URL is correct)
-    onion_url = "http://exampleonionurl.onion"
-    driver.get(onion_url)
-    
-    # You can interact with the page as usual using Selenium commands
-    print(driver.title)  # Print the title of the page to verify it's loaded
-    
-    driver.quit()
-```
-
-### Considerations:
-- **Speed**: Browsing `.onion` URLs through Tor is generally slower due to the nature of the Tor network.
-- **Security**: Always ensure that Tor is properly configured, and be cautious when browsing `.onion` sites as they can sometimes host malicious content.
-- **Tor Browser**: Running the full Tor Browser is the safest way to ensure proper anonymity and security, as it is configured to work with the Tor network.
-
-### Conclusion:
-This setup should allow you to use Selenium with `.onion` URLs via the Tor network. Ensure that Tor is running and properly configured before running your script, and use the appropriate proxy settings based on the browser (Firefox or Chrome) you are using.
+If you have further specific configurations or more details regarding your `.onion` service or the Tor network setup, feel free to ask!
